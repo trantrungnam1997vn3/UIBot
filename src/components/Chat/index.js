@@ -1,20 +1,42 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Page,
-  Notification,
-  Form,
-  Container,
+  Button,
   Card,
-  Button
+  Container,
+  Form,
+  Notification,
+  Page
 } from "tabler-react";
-import { stat } from "fs";
+import Stomp from "stompjs";
 
 function Chart() {
   const [message, setMessage] = useState("");
+  const [client, setClient] = useState(Stomp.client("ws://localhost:15674/ws"));
+
+  function intialWebStompConnection() {
+    var instance = Stomp.client("ws://localhost:15674/ws");
+    return instance;
+  }
 
   useEffect(() => {
-    console.log(message);
-  });
+    client.connect("admin", "admin", on_connect, on_error, "/");
+    console.log(client);
+  }, [client]);
+
+  function on_connect() {
+    client.subscribe("/topic/go", function(b) {
+      console.log(b.body);
+    });
+  }
+
+  function handleSendMessage() {
+    console.log("go");
+    client.send("/topic/go", { "content-type": "text/plain" }, message);
+  }
+
+  function on_error() {
+    console.log("error");
+  }
 
   return (
     <Page.Content>
@@ -39,7 +61,7 @@ function Chart() {
           </Card.Body>
           <Card.Footer>
             <Card.Options>
-              <Form.InputGroup append={<Button color="primary">SEND</Button>}>
+              <Form.InputGroup append={<Button onClick={e => handleSendMessage()} color="primary">SEND</Button>}>
                 <Form.Input
                   onChange={e => setMessage(e.target.value)}
                   value={message}
