@@ -40,29 +40,11 @@ function Chart() {
         var tag = document.getElementById("message");
         var child = document.createElement("div");
         tag.append(child);
-        // ReactDOM.render(
-        //   <div className="d-flex">
-        //     <Notification
-        //       avatarURL="demo/faces/female/1.jpg"
-        //       message={
-        //         <React.Fragment>
-        //           <strong>BOT</strong> {b.body}
-        //         </React.Fragment>
-        //       }
-        //       time="1 hour ago"
-        //       unread={false}
-        //     />
-        //   </div>
-        // , child);
-
         ShowMessage("BOT", b.body, false);
-        // var text = document.createTextNode("<div className='d-flex' key={id}><Notification key={id} avatarURL='demo/faces/female/1.jpg' message={ <React.Fragment> <strong>BOT</strong> {item} </React.Fragment> } time='1 hour ago' unread={false} /></div>");
-        // var p = document.getElementById("message");
-        // p.innerHTML = `<div className='d-flex'><img src ='/public/assets/images/25.jpg'/>${b.body}</div>`;
       },
       {
         "correlation-id": correlated_id,
-        "reply-to": "rpc_queue"
+        // "reply-to": "rpc_queue"
       }
     );
   }
@@ -76,8 +58,10 @@ function Chart() {
         <div className={`col-5 ${isSend ? "d-flex " : "d-flex"}`}>
           <Notification
             message={
-              <React.Fragment >
-                <p className="text-justify"><strong >{user.toUpperCase()}: </strong> {message} </p>
+              <React.Fragment>
+                <p className="text-justify">
+                  <strong>{user.toUpperCase()}: </strong> {message}{" "}
+                </p>
               </React.Fragment>
             }
             time="1 hour ago"
@@ -92,7 +76,7 @@ function Chart() {
   function handleSendMessage() {
     console.log("go");
     client.send(
-      "/reply-queue/rpc_queue",
+      "/exchange/topic_logs/abc",
       {
         "content-type": "text/plain",
         "correlation-id": correlated_id,
