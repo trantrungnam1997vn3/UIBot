@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
+import Stomp from "stompjs";
 import {
   Button,
   Card,
@@ -8,30 +9,48 @@ import {
   Notification,
   Page
 } from "tabler-react";
-import Stomp from "stompjs";
-import uuid from "uuid/v4";
 
 function Chart() {
   const [message, setMessage] = useState("");
   const [client, setClient] = useState(
     Stomp.client("ws://10.0.1.222:15674/ws")
   );
-  const [correlated_id, setCorrelatedId] = useState(uuid());
+  const [queueName, setQueueName] = useState("");
+  const [correlated_id, setCorrelatedId] = useState("");
   const [messageUser, setMessageUser] = useState([]);
-  const [count, setCount] = useState(0);
-
-  // function intialWebStompConnection() {
-  //   var instance = Stomp.client("ws://localhost:15674/ws");
-  //   return instance;
-  // }
 
   useEffect(() => {
+
+    handleGetCorIdAndQueueName();
+    createConnectionToWebSocket();
+  }, [client]);
+
+  function createConnectionToWebSocket() {
     client.connect("admin", "admin", on_connect, on_error, "/");
-  }, [client, messageUser]);
+  }
+
+  function handleGetCorIdAndQueueName() {
+    return fetch("http://localhost:5000/api/message", {
+      method: "GET"
+    })
+      .then(res => res.json())
+      .then(
+        result => {
+          setQueueName(result.name);
+          setCorrelatedId(result.id);
+        },
+        error => {
+          console.log(error);
+        }
+      );
+  }
 
   function on_connect() {
     client.subscribe(
-      "/reply-queue/rpc_queue",
+      // "/reply-queue/" + queueName,
+
+       "/exchange/direct_logs/amq.gen-0GwdxlIydlUjYJEWEU9n0Q",
+      // "/reply-queue/rpc_queue",
       function(b) {
         setMessageUser(messageUser => {
           messageUser.push([b.body]);
@@ -43,10 +62,53 @@ function Chart() {
         ShowMessage("BOT", b.body, false);
       },
       {
-        "correlation-id": correlated_id,
-        // "reply-to": "rpc_queue"
+        // "correlation-id": correlated_id
+        "correlation-id": "04b3a1d1-903a-4efa-870a-863b80aefc78" 
       }
     );
+
+    setClient(client);
+  }
+
+  function handleSendMessage() {
+    var headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Accept", "application/json");
+    headers.append("Access-Control-Allow-Credentials", "true");
+    headers.append("Access-Control-Allow-Origin", "http://localhost:5000");
+
+    headers.append("GET", "POST", "OPTIONS");
+
+    fetch("http://localhost:5000/api/message", {
+      method: "POST",
+      mode: "cors",
+      // credentials: "include",
+      headers: {
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        reqdata: {
+          Message: message
+        }
+      })
+    })
+      .then(res => res.json())
+      .then(
+        result => {
+          console.log(result);
+          // setQueueName(result.name);
+          // queueNameVariable = result.name;
+          // correlated_idVariable = result.id;
+          // setCorrelatedId(result.id);
+          // createConnectionToWebSocket();
+          ShowMessage("NAM", message, true);
+        },
+        error => {
+          console.log(error);
+        }
+      );
   }
 
   function ShowMessage(user, message, isSend) {
@@ -73,19 +135,19 @@ function Chart() {
     );
   }
 
-  function handleSendMessage() {
-    console.log("go");
-    client.send(
-      "/exchange/topic_logs/abc",
-      {
-        "content-type": "text/plain",
-        "correlation-id": correlated_id,
-        "reply-to": "rpc_queue"
-      },
-      message
-    );
-    ShowMessage("NAM", message, true);
-  }
+  // function handleSendMessage() {
+  //   console.log("go");
+  //   client.send(
+  //     "/exchange/topic_logs/abc",
+  //     {
+  //       "content-type": "text/plain",
+  //       "correlation-id": correlated_id,
+  //       "reply-to": "rpc_queue"
+  //     },
+  //     message
+  //   );
+  //   ShowMessage("NAM", message, true);
+  // }
 
   function on_error() {
     console.log("error");
